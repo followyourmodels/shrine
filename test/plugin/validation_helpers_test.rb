@@ -606,6 +606,10 @@ describe Shrine::Plugins::ValidationHelpers do
       @attacher.validate
       assert_equal 0, @attacher.errors.size
 
+      @attacher.class.validate { validate_mime_type_inclusion(["image/*"]) }
+      @attacher.validate
+      assert_equal 0, @attacher.errors.size
+
       @attacher.class.validate { validate_mime_type_inclusion(["video/mpeg"]) }
       @attacher.validate
       assert_equal 1, @attacher.errors.size
@@ -616,12 +620,21 @@ describe Shrine::Plugins::ValidationHelpers do
       @attacher.class.validate { validate_mime_type_inclusion(["image/jpeg"]) }
       @attacher.validate
       assert_equal 1, @attacher.errors.size
+
+      @attacher.attach(fakeio(content_type: nil))
+      @attacher.class.validate { validate_mime_type_inclusion(["image/*"]) }
+      @attacher.validate
+      assert_equal 1, @attacher.errors.size
     end
 
     it "uses the default error message" do
       @attacher.class.validate { validate_mime_type_inclusion(["video/mpeg"]) }
       @attacher.validate
       assert_equal ["type must be one of: video/mpeg"], @attacher.errors
+
+      @attacher.class.validate { validate_mime_type_inclusion(["video/*"]) }
+      @attacher.validate
+      assert_equal ["type must be one of: video/*"], @attacher.errors
     end
 
     it "accepts a custom error message" do
@@ -651,6 +664,10 @@ describe Shrine::Plugins::ValidationHelpers do
       @attacher.class.validate { validation_passed = validate_mime_type_inclusion(["video/mpeg"]) }
       @attacher.validate
       assert_equal false, validation_passed
+
+      @attacher.class.validate { validation_passed = validate_mime_type_inclusion(["image/*"]) }
+      @attacher.validate
+      assert_equal true, validation_passed
     end
 
     it "is aliased to #validate_mime_type" do
@@ -677,11 +694,20 @@ describe Shrine::Plugins::ValidationHelpers do
       @attacher.class.validate { validate_mime_type_exclusion(["video/mpeg"]) }
       @attacher.validate
       assert_equal 1, @attacher.errors.size
+
+      @attacher.class.validate { validate_mime_type_exclusion(["image/*"]) }
+      @attacher.validate
+      assert_equal 0, @attacher.errors.size
     end
 
     it "handles blank mime type" do
       @attacher.attach(fakeio(content_type: nil))
       @attacher.class.validate { validate_mime_type_exclusion(["video/mpeg"]) }
+      @attacher.validate
+      assert_equal 0, @attacher.errors.size
+
+      @attacher.attach(fakeio(content_type: nil))
+      @attacher.class.validate { validate_mime_type_exclusion(["video/*"]) }
       @attacher.validate
       assert_equal 0, @attacher.errors.size
     end
@@ -690,6 +716,10 @@ describe Shrine::Plugins::ValidationHelpers do
       @attacher.class.validate { validate_mime_type_exclusion(["video/mpeg"]) }
       @attacher.validate
       assert_equal ["type must not be one of: video/mpeg"], @attacher.errors
+
+      @attacher.class.validate { validate_mime_type_exclusion(["video/*"]) }
+      @attacher.validate
+      assert_equal ["type must not be one of: video/*"], @attacher.errors
     end
 
     it "accepts a custom error message" do
